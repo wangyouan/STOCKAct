@@ -13,7 +13,7 @@ import os
 class PathInfo(object):
     ROOT_PATH = r'D:\Onedrive\Temp\Projects\STOCKAct'
     TEMP_PATH = os.path.join(ROOT_PATH, 'temp')
-    RESULT_PATH = os.path.join(ROOT_PATH, 'output')
+    RESULT_PATH = os.path.join(ROOT_PATH, 'regression_results')
     DATA_PATH = os.path.join(ROOT_PATH, 'data')
 
     DATABASE_PATH = r'D:\Onedrive\Documents\data'
