@@ -57,25 +57,31 @@ if __name__ == '__main__':
     # merge hhi information
     t7_high_df: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table7_HHICross', 'high_hhisale_sample.dta'))
     t7_low_df: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table7_HHICross', 'low_hhisale_sample.dta'))
+    t7_high_df['HHI_high'] = 1
+    t7_low_df['HHI_high'] = 0
+    hhi_df: DataFrame = pd.concat([t7_high_df, t7_low_df], axis=0)
+    reg_df_bm['gvkey'] = reg_df_bm['gvkey'].astype(int)
 
-    reg_df_bm.loc[:, 'HHI_high'] = reg_df_bm['index'].isin(t7_high_df['index']).astype(int)
-    reg_df_hhi: DataFrame = reg_df_bm.merge(pd.concat([t7_low_df, t7_high_df], axis=0).loc[:, ['index', 'HHI']],
-                                            on=['index'], how='left')
+    reg_df_hhi: DataFrame = reg_df_bm.merge(hhi_df.loc[:, ['gvkey', 'fiscal_year', 'HHI', 'HHI_high']],
+                                            on=['gvkey', 'fiscal_year'], how='left')
 
     # merge lobby information
     t6_lobby_high: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table6_PoliCross', 'high_lobby_sample.dta'))
     t6_lobby_low: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table6_PoliCross', 'low_lobby_sample.dta'))
-    reg_df_hhi.loc[:, 'lobby_high'] = reg_df_hhi['index'].isin(t6_lobby_high['index']).astype(int)
-    reg_df_lobby: DataFrame = reg_df_hhi.merge(
-        pd.concat([t6_lobby_high, t6_lobby_low], axis=0).loc[:, ['index', 'amount']],
-        on=['index'], how='left')
+    t6_lobby_high['lobby_high'] = 1
+    t6_lobby_low['lobby_high'] = 0
+    lobby_df: DataFrame = pd.concat([t6_lobby_high, t6_lobby_low], axis=0)
+    reg_df_lobby: DataFrame = reg_df_hhi.merge(lobby_df.loc[:, ['gvkey', 'fiscal_year', 'amount', 'lobby_high']],
+                                               on=['gvkey', 'fiscal_year'], how='left')
 
     # merge prisk information
     t6_prisk_high: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table6_PoliCross', 'high_prisk_sample.dta'))
     t6_prisk_low: DataFrame = pd.read_stata(os.path.join(ZGY_PATH, 'table6_PoliCross', 'low_prisk_sample.dta'))
-    reg_df_lobby.loc[:, 'prisk_high'] = reg_df_lobby['index'].isin(t6_prisk_high['index']).astype(int)
+    t6_prisk_high['prisk_high'] = 1
+    t6_prisk_low['prisk_high'] = 0
+    prisk_df: DataFrame = pd.concat([t6_prisk_high, t6_prisk_low], axis=0)
     reg_df_prisk: DataFrame = reg_df_lobby.merge(
-        pd.concat([t6_prisk_high, t6_prisk_low], axis=0).loc[:, ['index', 'PRisk', 'PSentiment']],
-        on=['index'], how='left')
+        prisk_df.loc[:, ['gvkey', 'fiscal_year', 'PRisk', 'PSentiment', 'prisk_high']],
+        on=['gvkey', 'fiscal_year'], how='left')
 
     reg_df_prisk.to_pickle(os.path.join(const.TEMP_PATH, '20240812_stock_act_reg_bm_hhi_lobby_prisk.pkl'))
