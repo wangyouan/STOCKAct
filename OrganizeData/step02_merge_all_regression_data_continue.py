@@ -93,7 +93,8 @@ if __name__ == '__main__':
     reg_df8['sixYearSample'] = reg_df8['fiscal_year'].apply(lambda x: int(2008 < x < 2015))
 
     winsorize_variable_list = ['log_frequency', 'log_market_value', 'lev', 'BM', 'ROA', 'EarnVol', 'ret', 'turnover',
-                               'StkVol']
+                               'StkVol', 'log_frequency_ann', 'log_frequency_eps', 'log_frequency_noneps',
+                               'log_frequency_qtr', 'log_frequency_day', 'width', 'env_info', 'social_info']
 
     for key in winsorize_variable_list:
         reg_df8.loc[reg_df8[key].notnull(), f'{key}_w'] = winsorize(reg_df8[key].dropna(), limits=[0.01, 0.01])
