@@ -99,4 +99,7 @@ if __name__ == '__main__':
     for key in winsorize_variable_list:
         reg_df8.loc[reg_df8[key].notnull(), f'{key}_w'] = winsorize(reg_df8[key].dropna(), limits=[0.01, 0.01])
 
+    reg_df8['sic'] = reg_df8['sic'].astype(int).astype(str).str.zfill(4)
+    reg_df8['sic2'] = reg_df8['sic'].str[:2]
+    reg_df8.rename(columns={'treat': 'CongressOwn'}, inplace=True)
     reg_df8.to_stata(os.path.join(const.RESULT_PATH, '20240820_stock_act_reg_data.dta'), write_index=False, version=117)
