@@ -10,7 +10,6 @@ import os
 
 import pandas as pd
 from pandas import DataFrame
-from scipy.stats.mstats import winsorize
 
 from Constants import Constants as const
 
