@@ -23,7 +23,6 @@ import os
 
 import numpy as np
 import pandas as pd
-from conda_build.skeletons.cran import target_platform_bash_test_by_sel
 from pandas import DataFrame
 from scipy.stats.mstats import winsorize
 
