@@ -7,10 +7,10 @@
 # @Email: wangyouan@gamil.com
 
 """We calculate the ICC measure as a mean value of the ICCs derived from the GLS model (Gebhardt,
-Lee, and Swaminathan 2001), the CAT model (Claus and Thomas 2001), the PEG model (Easton 2004),
-and the AGR model (Ohlson and Juettner-Nauroth 2005). The GLS and CAT models are based on variants
+Lee, and Swaminathan 2001), the OJM model (Ohlson and Juettner-Nauroth 2005) the CAT model (Claus and Thomas 2001),
+and the PEG model (Easton 2004). The GLS and CAT models are based on variants
 of the residual-income model, and they differ in terms of their forecasting horizon and terminal value
-estimation. The PEG and AGR models are based on the abnormal-growth-in-earnings model, they differ in
+estimation. The PEG and OJM models are based on the abnormal-growth-in-earnings model, they differ in
 their formulation of the long-term growth in abnormal earnings. For details on the computations, see Lee,
 So, and Wang (2021)’s Appendix B.2. All four ICC measures are based on earnings forecasts derived from
 the cross-sectional mechanical forecast model of Hou, Van Dijk, and Zhang (2012), and do not have to rely
@@ -23,6 +23,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from conda_build.skeletons.cran import target_platform_bash_test_by_sel
 from pandas import DataFrame
 from scipy.stats.mstats import winsorize
 
@@ -62,19 +63,39 @@ if __name__ == '__main__':
     reg_df: DataFrame = pd.read_stata(os.path.join(const.RESULT_PATH, '20240821_stock_act_reg_data.dta'))
     reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left').merge(
         coc_ann_df, on=[const.GVKEY, const.YEAR], how='left')
-    lee_merged_df[const.YEAR] -= 1
-    coc_ann_df[const.YEAR] -= 1
-    reg_df3: DataFrame = reg_df2.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left',
-                                       suffixes=('', '_1')).merge(coc_ann_df, on=[const.GVKEY, const.YEAR], how='left',
-                                                                  suffixes=('', '_1'))
-    key_list = [i for i in coc_ann_df.keys() if i not in {const.GVKEY, const.YEAR}]
-    key_list.extend([i for i in lee_merged_df.keys() if i not in {const.GVKEY, const.YEAR}])
-    for key in key_list:
-        new_key = f'{key}_1'
-        reg_df3[key] = reg_df3[key].fillna(reg_df3[new_key])
-        reg_df3[new_key] = reg_df3[new_key].fillna(reg_df3[key])
-        if reg_df3[key].notnull().sum() == 0:
-            continue
-        reg_df3.loc[reg_df3[key].notnull(), key] = winsorize(reg_df3[key].dropna(), limits=[0.01, 0.01])
-        reg_df3.loc[reg_df3[new_key].notnull(), new_key] = winsorize(reg_df3[new_key].dropna(), limits=[0.01, 0.01])
-    reg_df3.to_stata(os.path.join(const.RESULT_PATH, '20240824_stock_act_reg_data.dta'), write_index=False, version=117)
+    # lee_merged_df[const.YEAR] -= 1
+    # coc_ann_df[const.YEAR] -= 1
+    # reg_df3: DataFrame = reg_df2.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left',
+    #                                    suffixes=('', '_1')).merge(coc_ann_df, on=[const.GVKEY, const.YEAR], how='left',
+    #                                                               suffixes=('', '_1'))
+
+    fillna_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual']
+
+    for key in fillna_keys:
+        match_suffixes = ['an_annual', 'mech_f_annual', 'an_f_annual', 'mech_month', 'mech_f_month', 'an_f_month']
+        for suffix in match_suffixes:
+            fillna_key = key.replace('mech_annual', suffix)
+            reg_df2[key] = reg_df2[key].fillna(reg_df2[fillna_key])
+
+    key = 'CCC_annual'
+    match_keys = ['CCC_f_annual', 'CCC_month', 'CCC_f_month']
+    for match_key in match_keys:
+        reg_df2[key] = reg_df2[key].fillna(reg_df2[match_key])
+
+    missing_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual', 'CCC_annual']
+    for key in missing_keys:
+        for i in reg_df2.loc[reg_df2[key].isnull()].index:
+            gvkey = reg_df2.loc[i, const.GVKEY]
+            year = reg_df2.loc[i, const.YEAR]
+            target_df = lee_merged_df.loc[(lee_merged_df[const.GVKEY] == gvkey)]
+            if not target_df.empty:
+                reg_df2.loc[i, key] = target_df[key].mean()
+
+    key = 'OJM_mech_annual'
+    missing_index = reg_df2[reg_df2[key].isnull() & reg_df2['CCC_annual'].notnull()].index
+    for i in missing_index:
+        reg_df2.loc[i, key] = reg_df2.loc[i, 'CCC_annual'] * 4 - reg_df2.loc[i, 'GLS_mech_annual'] - reg_df2.loc[
+            i, 'CAT_mech_annual'] - reg_df2.loc[i, 'PEG_mech_annual']
+
+    reg_df2.to_stata(os.path.join(const.RESULT_PATH, '20240825_stock_act_reg_data_fill1.dta'), write_index=False,
+                     version=117)
