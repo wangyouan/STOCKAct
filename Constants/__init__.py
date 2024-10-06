@@ -13,4 +13,4 @@ class Constants(PathInfo):
     YEAR = 'fiscal_year'
     GVKEY = 'gvkey'
     SIC = 'sic'
-    TICKER = 'tic'
+    TICKER = 'ticker'
