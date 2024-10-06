@@ -15,6 +15,7 @@ class PathInfo(object):
     TEMP_PATH = os.path.join(ROOT_PATH, 'temp')
     RESULT_PATH = os.path.join(ROOT_PATH, 'regression_data')
     DATA_PATH = os.path.join(ROOT_PATH, 'data')
+    REGRESSION_RESULT_PATH = os.path.join(ROOT_PATH, 'regression_results')
 
     DATABASE_PATH = r'D:\Onedrive\Documents\data'
     COMPUSTAT_PATH = os.path.join(DATABASE_PATH, 'compustat')
