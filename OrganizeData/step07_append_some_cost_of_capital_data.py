@@ -50,51 +50,53 @@ if __name__ == '__main__':
             lee_merged_df: DataFrame = lee_merged_df.merge(lee_annual_df, on=[const.GVKEY, const.YEAR], how='outer',
                                                            suffixes=('_month', '_annual'))
 
-    # sort percerived coc data
-    coc_df: DataFrame = pd.read_stata(
-        os.path.join(const.DATABASE_PATH, 'perceived cost of capital', 'CoCdata_V2_0_Posted11012024.dta'))
-
-    coc_ann_df: DataFrame = coc_df.groupby([const.GVKEY, 'year'])[
-        ['predicted_costcap', 'predicted_hurdle']].mean().reset_index(drop=False).rename(columns={'year': const.YEAR})
-    coc_ann_df[const.GVKEY] = coc_ann_df[const.GVKEY].astype(int)
+    # # sort percerived coc data
+    # coc_df: DataFrame = pd.read_stata(
+    #     os.path.join(const.DATABASE_PATH, 'Cost of Capital', 'perceived cost of capital',
+    #                  'CoCdata_V2_0_Posted11012024.dta'))
+    #
+    # coc_ann_df: DataFrame = coc_df.groupby([const.GVKEY, 'year'])[
+    #     ['predicted_costcap', 'predicted_hurdle']].mean().reset_index(drop=False).rename(columns={'year': const.YEAR})
+    # coc_ann_df[const.GVKEY] = coc_ann_df[const.GVKEY].astype(int)
 
     # append coc data to regression data
-    reg_df: DataFrame = pd.read_stata(os.path.join(const.RESULT_PATH, '20240821_stock_act_reg_data.dta'))
-    reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left').merge(
-        coc_ann_df, on=[const.GVKEY, const.YEAR], how='left')
+    reg_df: DataFrame = pd.read_stata(os.path.join(const.RESULT_PATH, '20250220_stock_act_data_v1.dta'))
+    reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left')
+    # reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left').merge(
+    #     coc_ann_df, on=[const.GVKEY, const.YEAR], how='left')
     # lee_merged_df[const.YEAR] -= 1
     # coc_ann_df[const.YEAR] -= 1
     # reg_df3: DataFrame = reg_df2.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left',
     #                                    suffixes=('', '_1')).merge(coc_ann_df, on=[const.GVKEY, const.YEAR], how='left',
     #                                                               suffixes=('', '_1'))
 
-    fillna_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual']
+    # fillna_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual']
+    #
+    # for key in fillna_keys:
+    #     match_suffixes = ['an_annual', 'mech_f_annual', 'an_f_annual', 'mech_month', 'mech_f_month', 'an_f_month']
+    #     for suffix in match_suffixes:
+    #         fillna_key = key.replace('mech_annual', suffix)
+    #         reg_df2[key] = reg_df2[key].fillna(reg_df2[fillna_key])
+    #
+    # key = 'CCC_annual'
+    # match_keys = ['CCC_f_annual', 'CCC_month', 'CCC_f_month']
+    # for match_key in match_keys:
+    #     reg_df2[key] = reg_df2[key].fillna(reg_df2[match_key])
+    #
+    # missing_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual', 'CCC_annual']
+    # for key in missing_keys:
+    #     for i in reg_df2.loc[reg_df2[key].isnull()].index:
+    #         gvkey = reg_df2.loc[i, const.GVKEY]
+    #         year = reg_df2.loc[i, const.YEAR]
+    #         target_df = lee_merged_df.loc[(lee_merged_df[const.GVKEY] == gvkey)]
+    #         if not target_df.empty:
+    #             reg_df2.loc[i, key] = target_df[key].mean()
+    #
+    # key = 'OJM_mech_annual'
+    # missing_index = reg_df2[reg_df2[key].isnull() & reg_df2['CCC_annual'].notnull()].index
+    # for i in missing_index:
+    #     reg_df2.loc[i, key] = reg_df2.loc[i, 'CCC_annual'] * 4 - reg_df2.loc[i, 'GLS_mech_annual'] - reg_df2.loc[
+    #         i, 'CAT_mech_annual'] - reg_df2.loc[i, 'PEG_mech_annual']
 
-    for key in fillna_keys:
-        match_suffixes = ['an_annual', 'mech_f_annual', 'an_f_annual', 'mech_month', 'mech_f_month', 'an_f_month']
-        for suffix in match_suffixes:
-            fillna_key = key.replace('mech_annual', suffix)
-            reg_df2[key] = reg_df2[key].fillna(reg_df2[fillna_key])
-
-    key = 'CCC_annual'
-    match_keys = ['CCC_f_annual', 'CCC_month', 'CCC_f_month']
-    for match_key in match_keys:
-        reg_df2[key] = reg_df2[key].fillna(reg_df2[match_key])
-
-    missing_keys = ['GLS_mech_annual', 'OJM_mech_annual', 'CAT_mech_annual', 'PEG_mech_annual', 'CCC_annual']
-    for key in missing_keys:
-        for i in reg_df2.loc[reg_df2[key].isnull()].index:
-            gvkey = reg_df2.loc[i, const.GVKEY]
-            year = reg_df2.loc[i, const.YEAR]
-            target_df = lee_merged_df.loc[(lee_merged_df[const.GVKEY] == gvkey)]
-            if not target_df.empty:
-                reg_df2.loc[i, key] = target_df[key].mean()
-
-    key = 'OJM_mech_annual'
-    missing_index = reg_df2[reg_df2[key].isnull() & reg_df2['CCC_annual'].notnull()].index
-    for i in missing_index:
-        reg_df2.loc[i, key] = reg_df2.loc[i, 'CCC_annual'] * 4 - reg_df2.loc[i, 'GLS_mech_annual'] - reg_df2.loc[
-            i, 'CAT_mech_annual'] - reg_df2.loc[i, 'PEG_mech_annual']
-
-    reg_df2.to_stata(os.path.join(const.RESULT_PATH, '20240825_stock_act_reg_data_fill1.dta'), write_index=False,
+    reg_df2.to_stata(os.path.join(const.RESULT_PATH, '20250220_stock_act_data_v2.dta'), write_index=False,
                      version=117)
