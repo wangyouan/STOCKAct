@@ -60,8 +60,13 @@ if __name__ == '__main__':
     # coc_ann_df[const.GVKEY] = coc_ann_df[const.GVKEY].astype(int)
 
     # append coc data to regression data
-    reg_df: DataFrame = pd.read_stata(os.path.join(const.RESULT_PATH, '20250220_stock_act_data_v1.dta'))
-    reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left')
+    reg_df: DataFrame = pd.read_stata(os.path.join(const.RESULT_PATH, '20250226_stock_act_data_v1.dta'))
+    # reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left')
+
+    for lag_year in range(1, 5):
+        tmp_df: DataFrame = lee_merged_df.copy()
+        lee_merged_df.loc[:, const.YEAR] -= lag_year
+        reg_df = reg_df.merge(tmp_df, on=[const.GVKEY, const.YEAR], how='left', suffixes=('', f'_{lag_year}'))
     # reg_df2: DataFrame = reg_df.merge(lee_merged_df, on=[const.GVKEY, const.YEAR], how='left').merge(
     #     coc_ann_df, on=[const.GVKEY, const.YEAR], how='left')
     # lee_merged_df[const.YEAR] -= 1
@@ -98,5 +103,5 @@ if __name__ == '__main__':
     #     reg_df2.loc[i, key] = reg_df2.loc[i, 'CCC_annual'] * 4 - reg_df2.loc[i, 'GLS_mech_annual'] - reg_df2.loc[
     #         i, 'CAT_mech_annual'] - reg_df2.loc[i, 'PEG_mech_annual']
 
-    reg_df2.to_stata(os.path.join(const.RESULT_PATH, '20250220_stock_act_data_v2.dta'), write_index=False,
-                     version=117)
+    reg_df.to_stata(os.path.join(const.RESULT_PATH, '20250226_stock_act_data_v2.dta'), write_index=False,
+                    version=119)
