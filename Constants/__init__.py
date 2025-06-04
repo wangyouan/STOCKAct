@@ -14,3 +14,4 @@ class Constants(PathInfo):
     GVKEY = 'gvkey'
     SIC = 'sic'
     TICKER = 'ticker'
+    CIK = 'cik'
