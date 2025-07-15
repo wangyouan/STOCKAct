@@ -6,6 +6,16 @@
 # @Author: Mark Wang
 # @Email: wangyouan@gamil.com
 
+
+import numpy as np
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pydantic.v1 import NoneStr
+import statsmodels.formula.api as smf
+
+from Constants import Constants as const
+
 def get_fama_french_industry(sic_code):
     if 100 <= sic_code <= 199:
         return 'Agric'
@@ -103,3 +113,71 @@ def get_fama_french_industry(sic_code):
         return 'Fin'
     else:
         return 'Other'
+
+
+def evenly_separate_df_and_get_moving_average(df: DataFrame, dep_var: str, ind_var: str, n_bins: int = 10,
+                                              start_point=None, end_point=None, na_value=np.nan):
+    """
+    This function will equally separate a dataframe and return the moving average of
+    :param df: dataframe
+    :param dep_var: dependent variable name
+    :param ind_var: independent variable name
+    :param n_bins: optional, How many bins is used to hold each value. Default is 10
+    :param start_point: optional, the start point to cut. Default is the minimum of dep var
+    :param end_point: optional, the start point to cut. Default is the maximum of dep var
+    :param na_value: if no values exists, use which one to instead.
+    :return: New dataframe contains all the values
+    """
+    if end_point is None:
+        end_point = df[ind_var].max()
+    if start_point is None:
+        start_point = df[ind_var].min()
+
+    step = (end_point - start_point) / n_bins
+
+    result_row = list()
+    for i in np.arange(start_point, end_point, step):
+        i_id = i + step / 2
+        if step > 0:
+            dep_val = df[df[ind_var].apply(lambda x: i <= x < i + step)][dep_var].mean()
+        else:
+            dep_val = df[df[ind_var].apply(lambda x: i + step < x <= i)][dep_var].mean()
+        result_row.append( {ind_var: i_id, dep_var: dep_val if not np.isnan(dep_val) else na_value})
+
+    result_df = DataFrame(result_row)
+    return result_df
+
+
+def draw_rdd_pictures(data_df, ind_var, dep_var, bin_num, bandwidth, order=1, x_label=None,
+                      y_label=None, ax=None):
+    sub_df: DataFrame = data_df.loc[:, [ind_var, dep_var, const.IS_WIN]].dropna(how='any')
+
+    left_df = sub_df[sub_df[const.IS_WIN] < 0.5].copy()
+    right_df = sub_df[sub_df[const.IS_WIN] > 0.5].copy()
+
+    if ax is None:
+        fig = plt.figure(figsize=(12, 5))
+        ax = plt.subplot()
+    left_tmp_df = evenly_separate_df_and_get_moving_average(df=left_df, dep_var=dep_var, ind_var=ind_var,
+                                                            n_bins=bin_num, start_point=0.5, end_point=0 + bandwidth,
+                                                            na_value=np.nan)
+    right_tmp_df = evenly_separate_df_and_get_moving_average(df=right_df, dep_var=dep_var, ind_var=ind_var,
+                                                             n_bins=bin_num, start_point=0.5, end_point=1 - bandwidth,
+                                                             na_value=np.nan)
+    ax = sns.regplot(x=ind_var, y=dep_var, data=left_df, ax=ax, x_bins=None, scatter=False,
+                     color='black', truncate=True, x_ci=None, ci=95, order=order)
+    ax = sns.regplot(x=ind_var, y=dep_var, data=right_df, ax=ax, x_bins=None, scatter=False,
+                     color='black', truncate=True, x_ci=None, ci=95, order=order)
+    ax = sns.regplot(x=ind_var, y=dep_var, data=left_df, ax=ax, x_bins=bin_num, scatter=True,
+                     color='black', truncate=True, x_ci=None, fit_reg=False)
+    ax = sns.regplot(x=ind_var, y=dep_var, data=right_df, ax=ax, x_bins=bin_num, scatter=True,
+                     color='black', truncate=True, x_ci=None, fit_reg=False)
+
+    ax.vlines(0.5, ax.get_ylim()[0], ax.get_ylim()[1])
+
+    # set-up the plot
+    ax.set_aspect('auto')
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    # ax.grid(b=True)
+    return ax

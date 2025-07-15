@@ -15,3 +15,6 @@ class Constants(PathInfo):
     SIC = 'sic'
     TICKER = 'ticker'
     CIK = 'cik'
+
+    IS_WIN = 'FEC_is_win'
+    VOTE_SHARE = 'FEC_margin'
