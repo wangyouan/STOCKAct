@@ -6,6 +6,11 @@
 # @Author: Mark Wang
 # @Email: wangyouan@gamil.com
 
+"""
+Hutton, A. P., Marcus, A. J., & Tehranian, H. (2009). Opaque Financial Reports, R2, and Crash Risk. Journal of Financial
+Economics, 94(1), 67–86. https://doi.org/10.1016/j.jfineco.2008.10.003
+"""
+
 import os
 
 from tqdm import tqdm
