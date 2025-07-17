@@ -11,10 +11,10 @@ import numpy as np
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pydantic.v1 import NoneStr
-import statsmodels.formula.api as smf
+import datetime
 
 from Constants import Constants as const
+
 
 def get_fama_french_industry(sic_code):
     if 100 <= sic_code <= 199:
@@ -142,7 +142,7 @@ def evenly_separate_df_and_get_moving_average(df: DataFrame, dep_var: str, ind_v
             dep_val = df[df[ind_var].apply(lambda x: i <= x < i + step)][dep_var].mean()
         else:
             dep_val = df[df[ind_var].apply(lambda x: i + step < x <= i)][dep_var].mean()
-        result_row.append( {ind_var: i_id, dep_var: dep_val if not np.isnan(dep_val) else na_value})
+        result_row.append({ind_var: i_id, dep_var: dep_val if not np.isnan(dep_val) else na_value})
 
     result_df = DataFrame(result_row)
     return result_df
@@ -181,3 +181,8 @@ def draw_rdd_pictures(data_df, ind_var, dep_var, bin_num, bandwidth, order=1, x_
     ax.set_ylabel(y_label)
     # ax.grid(b=True)
     return ax
+
+
+def print_log(log_news):
+    current_date_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{current_date_str}] {log_news}")
