@@ -7,10 +7,8 @@
 # @Email: wangyouan@gamil.com
 
 import os
-import datetime
 
 from tqdm import tqdm
-import numpy as np
 import pandas as pd
 
 from Constants import Constants as const
@@ -25,30 +23,6 @@ if __name__ == '__main__':
     ibes_df.columns = [col.lower() for col in ibes_df.columns]
     ibes_df = ibes_df[(ibes_df['fpi'] == '1')].copy()
     print_log("Loaded ibes data")
-
-    # Construct Analysts Data
-    print_log("Start to construct Analysts data")
-    columns_needed = ['ticker', 'statpers', 'numest', 'fpi', 'measure']
-    # 执行本地筛选逻辑，等同于 WRDS SQL 查询
-    ibes_summary = ibes_df[ibes_df['measure'] == 'EPS'][[
-        'ticker', 'statpers', 'numest']].copy()
-
-    # Convert the date column to datetime format
-    ibes_summary['statpers'] = pd.to_datetime(ibes_summary['statpers'])
-
-    # Extract year and month from 'statpers'
-    ibes_summary['year'] = ibes_summary['statpers'].dt.year
-    ibes_summary['month'] = ibes_summary['statpers'].dt.month
-
-    # Calculate the average number of analysts for each firm for each fiscal year
-    ibes_summary[const.YEAR] = ibes_summary['statpers'].dt.to_period('Y')
-
-    # Group by ticker and fiscal year, then calculate the average number of analysts
-    analyst_coverage = ibes_summary.groupby(['ticker', const.YEAR])['numest'].mean().reset_index()
-
-    # Rename columns
-    analyst_coverage.rename(columns={'numest': 'ANALYSTS'}, inplace=True)
-    print_log("Finish to construct Analysts data")
 
     print_log("start to construct FCSTERROR and DISPERSION Data")
 
@@ -105,19 +79,13 @@ if __name__ == '__main__':
         return match['permno'].values[0] if not match.empty else pd.NA
 
     ibes_annual['fyear_date'] = pd.to_datetime(ibes_annual[const.YEAR].astype(str) + '-01-01').astype('datetime64[ns]')
-    analyst_coverage['fyear_date'] = pd.to_datetime(analyst_coverage[const.YEAR].astype(str) + '-01-01').astype(
-        'datetime64[ns]')
-
-    analyst_coverage['permno'] = analyst_coverage.progress_apply(get_permno, axis=1)
     ibes_annual['permno'] = ibes_annual.progress_apply(get_permno, axis=1)
-
 
     # Merge IBES and CRSP Link data to get permno for each IBES ticker
     ibes_linked_df = ibes_annual.copy()
     for key in ['permno', const.YEAR]:
         ibes_linked_df[key] = pd.to_numeric(ibes_linked_df[key], errors='coerce')
         crsp_annual[key] = pd.to_numeric(crsp_annual[key], errors='coerce')
-        analyst_coverage[key] = pd.to_numeric(analyst_coverage[key], errors='coerce')
 
     # Merge IBES-linked data with CRSP quarterly data on permno and quarter
     merged_df_ann = pd.merge(ibes_linked_df, crsp_annual, on=['permno', const.YEAR], how='inner')
@@ -137,9 +105,4 @@ if __name__ == '__main__':
     merged_df_ann['FCSTERROR_last'] = abs(merged_df_ann['eps_mean_last'] - merged_df_ann['eps_actual_last']) / \
                                       merged_df_ann['Price_lag']
 
-    merged_df = merged_df_ann.merge(analyst_coverage, on=['permno', const.YEAR], how='left')
-
-    duplicated_keys = [i for i in merged_df.keys() if i.endswith('_x') or i.endswith('_y')]
-    print(duplicated_keys)
-
-    merged_df.drop(duplicated_keys, axis=1).to_pickle(os.path.join(const.TEMP_PATH, '1976_2023_analysts_fd_data.pkl'))
+    merged_df_ann.to_pickle(os.path.join(const.TEMP_PATH, '1976_2023_analysts_fd_data.pkl'))
