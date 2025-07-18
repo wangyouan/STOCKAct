@@ -80,6 +80,8 @@ if __name__ == '__main__':
 
     # Step 5: 整理输出最终数据 (firm-year level with permno, guidancecount and rangeforecast)
     final_output = ibes_annual[['permno', const.YEAR, 'guidancecount', 'rangeforecast']].dropna(subset=['permno'])
+    final_output.loc[final_output['guidancecount'] > 0, 'rangeforecast'] = final_output.loc[
+        final_output['guidancecount'] > 0, 'rangeforecast'].fillna(0)
 
     # 可选：保存结果
     output_path = os.path.join(const.TEMP_PATH, '20250718_ibes_firm_year_guidance.pkl')
