@@ -111,6 +111,13 @@ if __name__ == '__main__':
         winsorized_data = winsorize(non_na_data, limits=(0.01, 0.01))
         spc_reg_df.loc[non_na_data.index, column] = winsorized_data
 
+    pc_reg_df = pc_reg_df.drop_duplicates(subset=[const.GVKEY, const.YEAR], keep='first').dropna(
+        subset=[const.GVKEY, const.YEAR], how='any')
+    spc_reg_df = spc_reg_df.drop_duplicates(subset=[const.GVKEY, const.YEAR], keep='first').dropna(
+        subset=[const.GVKEY, const.YEAR], how='any')
+    spc_reg_df['int_term'] = spc_reg_df['FEC_margin'] * spc_reg_df['FEC_is_win']
+    spc_reg_df['margin2'] = spc_reg_df['FEC_margin'] * spc_reg_df['FEC_margin']
+    spc_reg_df['int_term2'] = spc_reg_df['margin2'] * spc_reg_df['FEC_is_win']
 
-    pc_reg_df.to_stata(os.path.join(const.RESULT_PATH, '20250718_pc_reg_data.dta'), write_index=False)
-    spc_reg_df.to_stata(os.path.join(const.RESULT_PATH, '20250718_spc_reg_data.dta'), write_index=False)
+    pc_reg_df.to_stata(os.path.join(const.RESULT_PATH, '20250719_pc_reg_data.dta'), write_index=False)
+    spc_reg_df.to_stata(os.path.join(const.RESULT_PATH, '20250719_spc_reg_data.dta'), write_index=False)
